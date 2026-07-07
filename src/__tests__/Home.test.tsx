@@ -5,42 +5,29 @@ import "@testing-library/jest-dom";
 jest.mock("../utils/api", () => {
   return {
     api: {
-      useUtils: () => ({
-        task: {
-          list: {
-            invalidate: jest.fn(),
-          },
+      useUtils: () => ({}),
+      sprint: {
+        list: {
+          useQuery: () => ({
+            data: [],
+            isLoading: false,
+          }),
         },
-      }),
-      task: {
+      },
+      workItem: {
         list: {
           useQuery: () => ({
             data: [
               {
                 id: "1",
-                title: "Test Task",
-                priority: "high",
-                status: "pending",
+                title: "Test Work Item",
+                type: "Task",
+                priority: "Medium",
+                status: "To Do",
                 createdAt: new Date(),
               },
             ],
             isLoading: false,
-          }),
-        },
-        create: {
-          useMutation: () => ({
-            mutate: jest.fn(),
-            isPending: false,
-          }),
-        },
-        update: {
-          useMutation: () => ({
-            mutate: jest.fn(),
-          }),
-        },
-        delete: {
-          useMutation: () => ({
-            mutate: jest.fn(),
           }),
         },
       },
@@ -48,8 +35,10 @@ jest.mock("../utils/api", () => {
   };
 });
 
-test("renders task list", () => {
+test("renders dashboard view", () => {
   render(<HomePage />);
-  expect(screen.getByText("My Tasks")).toBeInTheDocument();
-  expect(screen.getByText("Test Task")).toBeInTheDocument();
+  expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  expect(screen.getByText("Total Work Items")).toBeInTheDocument();
+  // We mock 1 work item, so it should render 1
+  expect(screen.getByText("1")).toBeInTheDocument();
 });

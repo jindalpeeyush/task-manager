@@ -7,24 +7,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String   @unique
-  emailVerified DateTime?
-  image         String?
-  tasks         Task[]
+// NextAuth standard models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Task {
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  ADMIN
+  SCRUM_MASTER
+  PRODUCT_OWNER
+  DEVELOPER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(DEVELOPER)
+  accounts      Account[]
+  sessions      Session[]
+  workItems     WorkItem[]
+}
+
+model Epic {
   id          String   @id @default(cuid())
   title       String
   description String?
-  priority    String
-  status      String   @default("pending")
-  deadline    DateTime?
-  tags        String[]
-  assignedTo  User?     @relation(fields: [assignedToId], references: [id])
+  status      String   @default("Planning") // Planning, Active, Completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workItems   WorkItem[]
+}
+
+model Sprint {
+  id          String   @id @default(cuid())
+  name        String
+  goal        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String   @default("Planning") // Planning, Active, Closed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workItems   WorkItem[]
+}
+
+model WorkItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   @default("Task") // Story, Task, Bug
+  status      String   @default("To Do") // To Do, In Progress, Review, Done
+  priority    String   @default("Medium") // Low, Medium, High, Critical
+  storyPoints Int?
+  
+  epicId      String?
+  epic        Epic?    @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  
+  sprintId    String?
+  sprint      Sprint?  @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  
   assignedToId String?
-  createdAt   DateTime  @default(now())
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
