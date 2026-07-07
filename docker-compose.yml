@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: task-manager-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: task_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-manager-app
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      # Database connection string to point to the `db` service
+      - DATABASE_URL=postgresql://postgres:password@db:5432/task_manager?schema=public
+      
+      # Next Auth
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=supersecret_please_change_me
+      
+      # Next Auth Providers (You'll need to fill these in your production setup)
+      - GITHUB_ID=
+      - GITHUB_SECRET=
+      - DISCORD_CLIENT_ID=
+      - DISCORD_CLIENT_SECRET=
+    restart: unless-stopped
+
+volumes:
+  db_data:
